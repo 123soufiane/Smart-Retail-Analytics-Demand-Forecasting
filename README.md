@@ -18,3 +18,7 @@ After schema setup, generate sample data with:
 ```bash
 python -m src.data_generation.generate_data
 ```
+
+Each run clears the existing rows from the generator's data tables and resets
+their identity values before inserting fresh sample data. The truncation uses
+`CASCADE`, so dependent rows in related tables may also be removed.

@@ -9,7 +9,7 @@ fake = Faker()
 engine = get_engine()
 
 def clear_tables():
-    """مسح البيانات القديمة (اختياري)"""
+    """مسح البيانات القديمة"""
     tables = [
         "returns", "sale_items", "sales", "purchase_items",
         "suppliers_orders", "inventory", "products", "customers",
@@ -52,7 +52,6 @@ def generate_suppliers():
 
 def generate_products():
     with engine.begin() as conn:
-        # جلب IDs
         categories = conn.execute(text("SELECT category_id FROM categories")).fetchall()
         suppliers = conn.execute(text("SELECT supplier_id FROM suppliers")).fetchall()
 
@@ -121,8 +120,9 @@ def generate_inventory():
         products = [p[0] for p in conn.execute(text("SELECT product_id FROM products")).fetchall()]
 
         for store_id in stores:
-            # كل متجر يحتوي على معظم المنتجات
+            # كل متجر يحتوي على 80% من المنتجات
             selected_products = random.sample(products, k=int(len(products) * 0.8))
+            
             for product_id in selected_products:
                 conn.execute(
                     text("""
@@ -143,17 +143,23 @@ def generate_sales_and_items():
         customers = [c[0] for c in conn.execute(text("SELECT customer_id FROM customers")).fetchall()]
         stores = [s[0] for s in conn.execute(text("SELECT store_id FROM stores")).fetchall()]
         products = conn.execute(text("SELECT product_id, unit_price FROM products")).fetchall()
-        product_dict = {p[0]: p[1] for p in products}
+        product_dict = {p[0]: float(p[1]) for p in products}
+        product_ids = list(product_dict.keys())
 
         payment_methods = ["Credit Card", "Cash", "Debit Card", "Mobile Payment"]
+        total_sales = CONFIG["num_sales"]
 
-        for _ in range(CONFIG["num_sales"]):
+        print(f"⏳ جاري توليد {total_sales:,} عملية بيع...")
+
+        for i in range(total_sales):
+            if (i + 1) % 1000 == 0:
+                print(f"   → تم {i + 1:,} / {total_sales:,}")
+
             sale_date = fake.date_time_between(start_date="-2y", end_date="now")
             customer_id = random.choice(customers)
             store_id = random.choice(stores)
             payment = random.choice(payment_methods)
 
-            # إنشاء الفاتورة
             result = conn.execute(
                 text("""
                     INSERT INTO sales (customer_id, store_id, sale_date, payment_method)
@@ -169,14 +175,13 @@ def generate_sales_and_items():
             )
             sale_id = result.scalar()
 
-            # إضافة منتجات للفاتورة
             num_items = random.randint(1, CONFIG["max_items_per_sale"])
-            selected_products = random.sample(list(product_dict.keys()), k=num_items)
+            selected_products = random.sample(product_ids, k=num_items)
             total = 0
 
             for product_id in selected_products:
                 qty = random.randint(1, 4)
-                unit_price = float(product_dict[product_id])
+                unit_price = product_dict[product_id]
                 discount = round(random.uniform(0, 15), 2) if random.random() < 0.3 else 0
 
                 conn.execute(
@@ -193,19 +198,16 @@ def generate_sales_and_items():
                         "disc": discount
                     }
                 )
-                total += (unit_price * qty) * (1 - discount/100)
+                total += (unit_price * qty) * (1 - discount / 100)
 
-            # تحديث إجمالي الفاتورة
             conn.execute(
                 text("UPDATE sales SET total_amount = :total WHERE sale_id = :id"),
                 {"total": round(total, 2), "id": sale_id}
             )
 
-    print(f"✅ تم إنشاء {CONFIG['num_sales']} عملية بيع مع تفاصيلها")
-
+    print(f"✅ تم إنشاء {total_sales:,} عملية بيع مع تفاصيلها")
 def generate_returns():
     with engine.begin() as conn:
-        # جلب بعض عمليات البيع مع منتجاتها
         sales = conn.execute(text("""
             SELECT s.sale_id, si.product_id, si.quantity, s.sale_date
             FROM sales s
@@ -220,12 +222,19 @@ def generate_returns():
         ]
 
         count = 0
+        now = datetime.now()
+
         for sale_id, product_id, max_qty, sale_date in sales:
             if count >= CONFIG["num_returns"]:
                 break
 
+            # إصلاح مشكلة الـ timezone
+            if sale_date.tzinfo is not None:
+                sale_date = sale_date.replace(tzinfo=None)
+
             return_date = sale_date + timedelta(days=random.randint(1, 30))
-            if return_date > datetime.now():
+
+            if return_date > now:
                 continue
 
             qty = random.randint(1, max_qty)
@@ -246,11 +255,10 @@ def generate_returns():
             count += 1
 
     print(f"✅ تم إنشاء {count} عملية إرجاع")
-
 def main():
     print("\n🚀 بدء توليد البيانات الاصطناعية...\n")
 
-    # clear_tables()  # أزل التعليق إذا أردت مسح البيانات القديمة
+    clear_tables()          # يمسح البيانات القديمة ثم يعيد توليدها
 
     generate_categories()
     generate_suppliers()
