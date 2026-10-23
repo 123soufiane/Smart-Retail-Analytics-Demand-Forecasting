@@ -1,5 +1,24 @@
 # Smart-Retail-Analytics-Demand-Forecasting
 
+## Quick start
+
+```bash
+# 1. Install dependencies
+pip install -r requirements.txt
+
+# 2. Configure the database connection
+cp .env.example .env        # then edit .env with your Neon/PostgreSQL URL
+
+# 3. Create the tables
+python -m src.database.create_schema
+
+# 4. Load the data (see the sections below)
+python -m src.data_ingestion.load_store_item_to_neon
+
+# 5. Train + predict
+python -m src.pipeline.run_full_pipeline
+```
+
 ## Database schema
 
 Install the project dependencies, configure `DATABASE_URL` in the repository's
