@@ -26,3 +26,11 @@ Thumbs.db
 
 # Logs
 *.log
+
+# Project data and trained artifacts (too large for GitHub)
+/data/
+/models/
+/reports/
+catboost_info/
+*.pkl
+*.parquet
