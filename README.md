@@ -98,3 +98,33 @@ python -m src.models.train_strong SITEM- --by-store      # per-store model
 python -m src.models.predict --top 10                    # product-level predictions
 python -m src.models.predict_store --top 15              # per-store predictions
 ```
+
+## Dashboard and API
+
+Generate forecasts before starting the dashboard. The API reads the prediction
+CSV files written by the pipeline and does not require a live database
+connection:
+
+```bash
+# Terminal 1: start the API
+uvicorn src.api.main:app --reload
+
+# Terminal 2: start the dashboard
+streamlit run src/dashboard/app.py
+```
+
+The dashboard is available at `http://localhost:8501`. The API documentation
+is available at `http://localhost:8000/docs`.
+
+| Endpoint | Description |
+| --- | --- |
+| `GET /api/health` | API status and availability of each forecast file |
+| `GET /api/summary?level=store` | Demand KPIs for store-level forecasts |
+| `GET /api/summary?level=product` | Demand KPIs for product-level forecasts |
+| `GET /api/forecasts?level=store&limit=100` | Store-level forecast rows |
+| `GET /api/forecasts?level=product&limit=100` | Product-level forecast rows |
+
+The dashboard defaults to `http://127.0.0.1:8000` for its API URL. Override
+that with `API_BASE_URL` when the API runs elsewhere. It includes interactive
+Plotly charts, store/product/search filters, KPI cards, automatic refresh, and
+CSV export for the filtered forecast table.
