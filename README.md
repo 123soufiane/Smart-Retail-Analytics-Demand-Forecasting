@@ -40,7 +40,7 @@ python -m src.data_ingestion.insert_uci_sales_fast      # UCI Online Retail
 python -m src.data_ingestion.load_store_item_to_neon     # Store Item
 ```
 
-## Loading Store Item sales into Neon
+## Loading Store Item sales
 
 Place the Store Item dataset at
 `data/raw/store_item/retail_sales.csv`, then run:
@@ -50,25 +50,15 @@ python -m src.data_ingestion.load_store_item_to_neon
 ```
 
 The loader maps each source store and item to `stores` and `products`, and
-imports each store/item/day row into `sales` and `sale_items`. It is built for
-large files and for Neon's storage limit:
+imports each store/item/day row into `sales` and `sale_items`. It processes
+the source in chunks and loads each store in its own transaction:
 
-- Rows are written with PostgreSQL `COPY` in one transaction per source store,
-  so a store is either fully loaded or not loaded at all.
-- Stores that are already complete are skipped, and a partially loaded store is
-  cleared and reloaded. Rerunning the command never duplicates rows.
-- Before each store the loader checks `pg_database_size` and stops cleanly when
-  the next store would not fit. The threshold defaults to 990 MB; override it
-  with `STORE_ITEM_SIZE_LIMIT_MB` when the Neon project has more storage.
-- To continue after freeing space, simply run the same command again.
-
-On a 1 GB Neon project the normalized `sales` + `sale_items` layout fits 42 of
-the 50 stores (~3.8M rows). All 50 stores in this layout need roughly
-1.25-1.3 GB; use a larger Neon plan, or free space, to load the rest.
-
-To make room for the extra stores, three secondary indexes were dropped:
-`sales_sale_date_idx`, `sales_store_date_idx`, and `sale_items_product_idx`.
-Recreate them after upgrading the Neon plan if analytic queries need them.
+- Each store is loaded atomically, so an interrupted import does not leave a
+  partially committed store.
+- Stores that are already complete are skipped; incomplete stores are safely
+  reloaded when you rerun the command.
+- For large imports, check that your database plan has enough available
+  capacity for the dataset before loading.
 
 The source does not include product costs, so the loader initializes each
 product's catalog cost from its average source price. Replace those values
