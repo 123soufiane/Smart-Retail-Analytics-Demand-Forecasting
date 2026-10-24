@@ -11,6 +11,7 @@ import pandas as pd
 import joblib
 from sqlalchemy import text
 from src.database.connection import get_engine
+from src.display_names import display_product_name
 
 
 def load_strong_models():
@@ -158,7 +159,8 @@ def predict_product(product_id: int):
     print("🔮 تنبؤ أسبوعي (Strong Ensemble)")
     print("=" * 55)
     print(f"Product ID    : {int(r['product_id'])}")
-    print(f"Name          : {str(r['product_name'])[:55]}")
+    name = display_product_name(r["sku"], r["product_name"])
+    print(f"Name          : {name[:55]}")
     print(f"SKU           : {r['sku']}")
     print(f"Last week     : {r['last_week'].date()}")
     print(f"Predict week  : {r['predict_week'].date()}")
@@ -174,6 +176,10 @@ def predict_top(n: int = 10):
     preds = predict_weighted(models, weights, feat[features])
     feat["predicted_quantity"] = np.round(preds, 2)
     feat["last_quantity"] = feat["lag_1"].round(2)
+    feat["product_name"] = [
+        display_product_name(sku, name)
+        for sku, name in zip(feat["sku"], feat["product_name"])
+    ]
     out = feat[
         ["product_id", "product_name", "sku", "last_week", "predict_week",
          "last_quantity", "predicted_quantity"]

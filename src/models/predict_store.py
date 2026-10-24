@@ -17,6 +17,7 @@ import joblib
 from sqlalchemy import text
 
 from src.database.connection import get_engine
+from src.display_names import display_product_name, display_store_name
 from src.models.predict import build_next_week_features
 from src.models.train_weekly import load_and_aggregate_weekly
 
@@ -69,6 +70,11 @@ def predict_all() -> pd.DataFrame:
     out = feat.merge(products, on="product_id", how="left").merge(
         stores, on="store_id", how="left"
     )
+    out["product_name"] = [
+        display_product_name(sku, name)
+        for sku, name in zip(out["sku"], out["product_name"])
+    ]
+    out["store_name"] = out["store_name"].map(display_store_name)
     out = out[
         [
             "store_id",

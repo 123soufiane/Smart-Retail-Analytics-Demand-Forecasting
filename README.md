@@ -106,6 +106,11 @@ screenshot below shows the store × product view.
 
 ![Smart Retail demand forecast dashboard](docs/images/dashboard.png)
 
+The Store Item dataset contains anonymous item and store IDs rather than
+verified catalog names. The readable product and store names shown here are
+fictional demo labels mapped to those IDs; replace the mapping in
+`src/display_names.py` with your catalog's actual names when available.
+
 The dashboard includes:
 
 - Forecast and last-week demand KPIs, with percentage change.

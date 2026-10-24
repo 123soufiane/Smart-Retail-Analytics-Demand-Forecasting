@@ -7,9 +7,23 @@ from pathlib import Path
 import pandas as pd
 
 from src.api.data import load_forecasts, summarize_forecasts
+from src.display_names import display_product_name, display_store_name
 
 
 class ForecastDataTests(unittest.TestCase):
+    def test_store_item_labels_are_human_readable_and_keep_unknown_names(self):
+        self.assertEqual(
+            display_product_name("SITEM-item_1", "Item item_1"), "Whole Milk"
+        )
+        self.assertEqual(
+            display_product_name("OTHER-123", "A real catalog name"),
+            "A real catalog name",
+        )
+        self.assertEqual(
+            display_store_name("Store Item store_1"), "Riverside Market"
+        )
+        self.assertEqual(display_store_name("Neighborhood Store"), "Neighborhood Store")
+
     def test_loads_and_sorts_store_forecasts(self):
         with tempfile.TemporaryDirectory() as directory:
             path = Path(directory) / "predictions_store_next_week.csv"
