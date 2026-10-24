@@ -224,18 +224,20 @@ with left_chart:
 
 with right_chart:
     st.markdown("#### Forecast vs. last week")
+    comparison_hover_data = {
+        "sku": True,
+        "last_quantity": ":,.2f",
+        "predicted_quantity": ":,.2f",
+    }
+    if level == "store":
+        comparison_hover_data["store_name"] = True
     comparison = px.scatter(
         filtered,
         x="last_quantity",
         y="predicted_quantity",
         color="store_name" if level == "store" else "product_name",
         hover_name="product_name",
-        hover_data={
-            "sku": True,
-            "store_name": level == "store",
-            "last_quantity": ":,.2f",
-            "predicted_quantity": ":,.2f",
-        },
+        hover_data=comparison_hover_data,
         labels={
             "last_quantity": "Last week",
             "predicted_quantity": "Forecast week",

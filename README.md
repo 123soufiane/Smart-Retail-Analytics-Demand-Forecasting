@@ -99,22 +99,51 @@ python -m src.models.predict --top 10                    # product-level predict
 python -m src.models.predict_store --top 15              # per-store predictions
 ```
 
-## Dashboard and API
+## Forecast dashboard
 
-Generate forecasts before starting the dashboard. The API reads the prediction
-CSV files written by the pipeline and does not require a live database
-connection:
+Explore weekly demand forecasts in an interactive Streamlit dashboard. The
+screenshot below shows the store × product view.
+
+![Smart Retail demand forecast dashboard](docs/images/dashboard.png)
+
+The dashboard includes:
+
+- Forecast and last-week demand KPIs, with percentage change.
+- Store, product, and text-search filters.
+- Interactive charts for highest forecast demand and forecast-versus-history.
+- A sortable forecast table and CSV export for filtered results.
+- Automatic data refresh every minute, plus a manual refresh button.
+
+### Run locally
+
+Create the forecast CSV files before launching the dashboard. To generate
+store × product forecasts, run:
 
 ```bash
-# Terminal 1: start the API
-uvicorn src.api.main:app --reload
+python -m src.pipeline.run_full_pipeline --by-store
+```
 
-# Terminal 2: start the dashboard
+For product-level forecasts, the default is the top 10 products; request more
+with, for example, `python -m src.models.predict --top 50`.
+
+Start the API and dashboard in separate terminals from the repository root:
+
+```bash
+# Terminal 1: forecast API
+uvicorn src.api.main:app --reload
+```
+
+```bash
+# Terminal 2: dashboard
 streamlit run src/dashboard/app.py
 ```
 
-The dashboard is available at `http://localhost:8501`. The API documentation
-is available at `http://localhost:8000/docs`.
+Open the dashboard at `http://localhost:8501`. The interactive API
+documentation is at `http://localhost:8000/docs`. The API serves the generated
+CSV files and does not need a live database connection. If the API is running
+at another address, set `API_BASE_URL` before starting Streamlit.
+
+### API endpoints
 
 | Endpoint | Description |
 | --- | --- |
@@ -123,8 +152,3 @@ is available at `http://localhost:8000/docs`.
 | `GET /api/summary?level=product` | Demand KPIs for product-level forecasts |
 | `GET /api/forecasts?level=store&limit=100` | Store-level forecast rows |
 | `GET /api/forecasts?level=product&limit=100` | Product-level forecast rows |
-
-The dashboard defaults to `http://127.0.0.1:8000` for its API URL. Override
-that with `API_BASE_URL` when the API runs elsewhere. It includes interactive
-Plotly charts, store/product/search filters, KPI cards, automatic refresh, and
-CSV export for the filtered forecast table.
