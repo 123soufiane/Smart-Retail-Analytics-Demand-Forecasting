@@ -119,6 +119,20 @@ The dashboard includes:
 - A sortable forecast table and CSV export for filtered results.
 - Automatic data refresh every minute, plus a manual refresh button.
 
+### Plotly charts
+
+**Highest forecast demand** ranks store-and-product combinations by predicted
+weekly quantity. Use the dashboard slider and filters to explore different
+items.
+
+![Plotly bar chart ranking the highest forecast demand by store and product](docs/images/forecast-demand-by-item.png)
+
+**Forecast vs. last week** compares predicted quantity with the previous week's
+quantity for each store and product. Points near the dashed line indicate
+similar demand; points above or below it indicate an increase or decrease.
+
+![Plotly scatter chart comparing forecast demand with last week's demand](docs/images/forecast-vs-last-week.png)
+
 ### Run locally
 
 Create the forecast CSV files before launching the dashboard. To generate
